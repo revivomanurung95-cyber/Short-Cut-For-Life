@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Lamaran Tracker</title>
+  <meta name="description" content="Pelacak lamaran kerja dengan dashboard, analisis, materi harian, dan belajar pajak. Data tersimpan di browsermu.">
+  <meta name="theme-color" content="#141B4D">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">🐓</span>
+        <div><b>Until 100</b><small>Lamaran tracker</small></div>
+      </div>
+      <nav id="nav" aria-label="Menu utama"></nav>
+      <div class="side-foot" id="syncInfo">Memuat…</div>
+    </aside>
+    <main class="main" id="main"><div id="view"></div></main>
+  </div>
+  <div id="modalRoot"></div>
+  <div id="toasts" aria-live="polite"></div>
+  <div id="busy" hidden class="topbar-busy"></div>
+
+  <script src="chart.umd.js"></script>
+  <script src="data-modul.js"></script>
+  <script src="data-harian.js"></script>
+  <script src="data-pajak.js"></script>
+  <script src="storage.js"></script>
+  <script src="app.js"></script>
+  <script src="belajar.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

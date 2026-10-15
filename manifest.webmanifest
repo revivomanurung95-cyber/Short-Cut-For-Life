@@ -1,0 +1,15 @@
+{
+  "name": "Lamaran Tracker",
+  "short_name": "Lamaran",
+  "description": "Pelacak lamaran kerja, analisis, materi harian, dan belajar pajak.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F3F5FF",
+  "theme_color": "#141B4D",
+  "lang": "id",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
