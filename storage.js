@@ -78,9 +78,9 @@ const emptyProgress = () => ({ done: {}, quiz: {}, daily: { done: [], last: '', 
 const getProgress = () => Object.assign(emptyProgress(), read(KEY.progress, {}));
 
 /* ---------- CSV ---------- */
-function parseCsv(text) {
-  text = String(text).replace(/^\uFEFF/, '');
-  const first = text.split(/\r?\n/)[0] || '', delim = first.split(';').length > first.split(',').length ? ';' : ',';
+/* Memecah teks CSV menjadi baris dan sel. delim: ',' ';' atau tab. Sel ber-kutip (boleh berisi koma dan baris baru) didukung. */
+function parseCsv(text, delim) {
+  text = String(text).replace(/^\uFEFF/, ''); delim = delim || ',';
   const rows = []; let row = [], cur = '', q = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
@@ -93,15 +93,30 @@ function parseCsv(text) {
   if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
   return rows;
 }
-/* Mengimpor CSV dari Google Sheets (header dicari otomatis) atau CSV hasil ekspor aplikasi ini. */
+const normH = c => String(c == null ? '' : c).replace(/\s+/g, ' ').trim().toUpperCase();
+const isCompanyH = u => u === 'PERUSAHAAN' || u === 'NAMA PERUSAHAAN' || u === 'COMPANY';
+const isPositionH = u => u === 'POSISI' || u === 'JABATAN' || u === 'POSITION' || u === 'POSISI YANG DILAMAR';
+function findHeader(grid) {
+  for (let r = 0; r < Math.min(grid.length, 50); r++) { const up = grid[r].map(normH); if (up.some(isCompanyH) && up.some(isPositionH)) return r; }
+  return -1;
+}
+/* Mengimpor CSV dari Google Sheets (pemisah koma, titik koma, atau tab dicoba otomatis; header dicari di 50 baris pertama)
+   atau CSV hasil ekspor aplikasi ini. */
 function rowsFromCsv(text) {
-  const grid = parseCsv(text); let h = -1;
-  for (let r = 0; r < Math.min(grid.length, 20); r++) { const up = grid[r].map(c => String(c).trim().toUpperCase()); if (up.indexOf('PERUSAHAAN') > -1 && up.indexOf('POSISI') > -1) { h = r; break; } }
-  if (h < 0) throw new Error('Kolom PERUSAHAAN dan POSISI tidak ditemukan pada 20 baris pertama. Pastikan file CSV berasal dari tab lamaranmu.');
+  const t = String(text || '');
+  if (/^PK\u0003\u0004/.test(t)) throw new Error('File ini berformat Excel (.xlsx), bukan CSV. Di Google Sheets pilih File → Unduh → Nilai dipisahkan koma (.csv).');
+  if (/^\s*<(!doctype|html)/i.test(t)) throw new Error('File ini halaman web, bukan CSV. Unduh lewat File → Unduh → Nilai dipisahkan koma (.csv).');
+  let grid = null, h = -1;
+  for (const d of [',', ';', '\t']) { const g = parseCsv(t, d), i = findHeader(g); if (i > -1) { grid = g; h = i; break; } }
+  if (h < 0) {
+    const g = parseCsv(t, ','), first = g.find(r => r.some(c => String(c).trim()));
+    const seen = first ? first.filter(c => String(c).trim()).slice(0, 6).join(' | ') : '(file kosong)';
+    throw new Error('Kolom PERUSAHAAN dan POSISI tidak ditemukan. Isi baris pertama yang terbaca: "' + seen.slice(0, 120) + '". Kemungkinan tab yang diunduh bukan tab lamaranmu: buka tab lamaran dulu di Google Sheets, baru unduh.');
+  }
   const idx = {}, tgl = [];
-  grid[h].forEach((c, i) => { const u = String(c).trim().toUpperCase();
+  grid[h].forEach((c, i) => { const u = normH(c);
     if (u === 'JENIS') idx.jenis = i; else if (u === 'TANGGAL') tgl.push(i); else if (u === 'INFO' || u === 'SUMBER' || u === 'SUMBER INFO') idx.info = i;
-    else if (u === 'PERUSAHAAN') idx.company = i; else if (u === 'POSISI') idx.position = i; else if (u === 'STATUS') idx.status = i;
+    else if (isCompanyH(u)) idx.company = i; else if (isPositionH(u)) idx.position = i; else if (u === 'STATUS') idx.status = i;
     else if (u === 'NOTES' || u === 'NOTE' || u === 'CATATAN') idx.notes = i; else if (u === 'LINK LOWONGAN' || u === 'LINK') idx.link = i;
     else if (u === 'KONTAK HRD' || u === 'KONTAK') idx.contact = i; else if (u === 'GAJI') idx.salary = i; else if (u === 'TINDAK LANJUT') idx.followup = i;
     else if (u === 'TANGGAL RESPONS' || u === 'TANGGAL RESPONS / HASIL') idx.resp = i; });
