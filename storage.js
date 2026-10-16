@@ -12,7 +12,7 @@
 const KEY = { rows: 'lt.rows.v1', settings: 'lt.settings.v1', progress: 'lt.progress.v1', seq: 'lt.seq.v1' };
 const STATUSES = ['Pendaftaran', 'Tanpa Kabar', 'Screening', 'Psikotes/Assessment', 'Interview', 'Offering', 'Accepted', 'Got Rejected', 'Saya Tolak'];
 const FINAL = ['Accepted', 'Got Rejected', 'Saya Tolak'];
-const DEFAULTS = { name: '', target: 100, deadline: '', ghostDays: 21, followDays: 14, theme: 'auto', started: false, lastBackup: '' };
+const DEFAULTS = { name: '', target: 100, deadline: '', ghostDays: 21, followDays: 14, theme: 'auto', started: false, lastBackup: '', mode: 'auto' };
 
 /* ---------- baca/tulis localStorage (dengan cadangan di memori bila diblokir) ---------- */
 let mem = {}, persistent = true;
@@ -169,7 +169,7 @@ const Store = {
   saveSettings(s) {
     const cur = getSettings(), num = (v, a, b, d) => Math.max(a, Math.min(b, Number(v) || d));
     return setSettings({ name: str(s.name, 40), target: num(s.target, 1, 1000, cur.target), deadline: isoOrEmpty(s.deadline), ghostDays: num(s.ghostDays, 7, 90, cur.ghostDays), followDays: num(s.followDays, 3, 60, cur.followDays),
-      theme: ['auto', 'light', 'dark'].indexOf(s.theme) > -1 ? s.theme : cur.theme, started: cur.started, lastBackup: cur.lastBackup });
+      theme: ['auto', 'light', 'dark'].indexOf(s.theme) > -1 ? s.theme : cur.theme, mode: ['auto', 'cepat', 'lengkap'].indexOf(s.mode) > -1 ? s.mode : cur.mode, started: cur.started, lastBackup: cur.lastBackup });
   },
   saveProgress(p) {
     const src = p || {}, clean = emptyProgress();
@@ -191,17 +191,18 @@ const Store = {
   },
   exportBackup() {
     const s = getSettings(); s.lastBackup = todayIso(); setSettings(s);
-    return JSON.stringify({ app: 'lamaran-tracker', version: 1, exportedAt: new Date().toISOString(), rows: rawRows(), settings: s, progress: getProgress() }, null, 2);
+    return JSON.stringify({ app: 'lamaran-tracker', version: 1, exportedAt: new Date().toISOString(), rows: rawRows(), settings: s, progress: getProgress(), fin: read('lt.fin.v1', null), life: read('lt.life.v1', null) }, null, 2);
   },
   restoreBackup(text) {
     let o; try { o = JSON.parse(text); } catch (e) { throw new Error('File cadangan tidak valid (bukan JSON).'); }
     if (!o || o.app !== 'lamaran-tracker' || !Array.isArray(o.rows)) throw new Error('File ini bukan cadangan Lamaran Tracker.');
     write(KEY.seq, 0); const rows = o.rows.filter(r => r && r.company && r.position).map(r => cleanRow(r, nextId())); write(KEY.rows, rows);
     const s = Object.assign({}, DEFAULTS, o.settings || {}, { started: true }); setSettings(s);
-    Store.saveProgress(o.progress || {}); return { ok: true, added: rows.length };
+    Store.saveProgress(o.progress || {}); if (o.fin) write('lt.fin.v1', o.fin); if (o.life) write('lt.life.v1', o.life); return { ok: true, added: rows.length };
   },
-  wipeAll() { Object.keys(KEY).forEach(k => { try { localStorage.removeItem(KEY[k]); } catch (e) {} }); mem = {}; return { ok: true }; }
+  wipeAll() { Object.keys(KEY).concat(['fin', 'life', 'lock']).forEach(k => { try { localStorage.removeItem(KEY[k] || ('lt.' + k + '.v1')); } catch (e) {} }); mem = {}; return { ok: true }; }
 };
+Store._kv = { read, write };
 Store._parse = { parseDate, rowsFromCsv, parseCsv, normalizeStatus };
 window.LTStore = Store;
 })();

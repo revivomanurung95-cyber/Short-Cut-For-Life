@@ -47,6 +47,12 @@ const IC = {
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>', clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>',
+  wallet: '<path d="M4 7a2 2 0 0 1 2-2h12v4M4 7v10a2 2 0 0 0 2 2h14V9H6a2 2 0 0 1-2-2zM16 14h.01"/>', swap: '<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+  receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/>', timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>', note: '<path d="M5 3h10l4 4v14H5zM14 3v5h5M8 13h8M8 17h5"/>',
+  checklist: '<path d="M9 6h11M9 12h11M9 18h11M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>', repeat: '<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>', pie: '<path d="M12 3v9h9A9 9 0 1 1 12 3zM15 3a9 9 0 0 1 6 6h-6z"/>',
+  trend: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>', x: '<path d="M6 6l12 12M18 6L6 18"/>', minus: '<path d="M5 12h14"/>',
   award: '<circle cx="12" cy="9" r="6"/><path d="M8.5 14L7 22l5-3 5 3-1.5-8"/>', inbox: '<path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 3h6l1-3h5"/>'
 };
 for (const k in MOD_ICONS) IC['m_' + k] = MOD_ICONS[k];
@@ -146,23 +152,31 @@ function applyTheme() {
   const dark = t === 'dark' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
 }
-const NAV = [
-  { g: 'Pelacak' }, { v: 'beranda', l: 'Beranda', i: 'home', c: '--c1' }, { v: 'lamaran', l: 'Lamaran', i: 'list', c: '--c2' }, { v: 'papan', l: 'Papan', i: 'board', c: '--c6' },
+/* Mode tampilan: "cepat" (HP, hanya catat + hari ini) dan "lengkap" (semua fitur). Pengaturan "auto" memilih dari lebar layar. */
+function curMode() { const m = S.settings.mode || 'auto'; if (m === 'cepat' || m === 'lengkap') return m; return window.innerWidth <= 760 ? 'cepat' : 'lengkap'; }
+const NAV_FULL = [
+  { v: 'hari', l: 'Hari ini', i: 'sun', c: '--c4' },
+  { g: 'Pelacak lamaran' }, { v: 'beranda', l: 'Beranda', i: 'home', c: '--c1' }, { v: 'lamaran', l: 'Lamaran', i: 'list', c: '--c2' }, { v: 'papan', l: 'Papan', i: 'board', c: '--c6' },
   { v: 'analisis', l: 'Analisis', i: 'chart', c: '--c3' }, { v: 'tindak', l: 'Tindak lanjut', i: 'bell', c: '--c5' },
-  { g: 'Belajar' }, { v: 'harian', l: 'Materi harian', i: 'sun', c: '--c4' }, { v: 'modul', l: 'Modul karier', i: 'book', c: '--c8' }, { v: 'pajak', l: 'Belajar pajak', i: 'scale', c: '--c7' },
-  { g: 'Akun' }, { v: 'atur', l: 'Pengaturan', i: 'gear', c: '--c2' }
+  { g: 'Keuangan' }, { v: 'catat', l: 'Catat', i: 'plus', c: '--c3' }, { v: 'cashflow', l: 'Cashflow', i: 'receipt', c: '--c2' }, { v: 'rekap', l: 'Rekap', i: 'pie', c: '--c7' },
+  { v: 'rencana', l: 'Rencana', i: 'target', c: '--c8' }, { v: 'dompet', l: 'Dompet', i: 'wallet', c: '--c1' },
+  { g: 'Produktif' }, { v: 'kebiasaan', l: 'Kebiasaan', i: 'flame', c: '--c5' }, { v: 'tugas', l: 'Tugas & catatan', i: 'checklist', c: '--c6' }, { v: 'fokus', l: 'Fokus', i: 'timer', c: '--c4' },
+  { g: 'Belajar' }, { v: 'harian', l: 'Materi harian', i: 'book', c: '--c8' }, { v: 'modul', l: 'Modul karier', i: 'm_file', c: '--c2' }, { v: 'pajak', l: 'Belajar pajak', i: 'scale', c: '--c7' },
+  { g: 'Akun' }, { v: 'transfer', l: 'Transfer data', i: 'swap', c: '--c3' }, { v: 'atur', l: 'Pengaturan', i: 'gear', c: '--c2' }
 ];
+const NAV_QUICK = [{ v: 'catat', l: 'Catat', i: 'plus', c: '--c3' }, { v: 'hari', l: 'Hari ini', i: 'sun', c: '--c4' }, { v: 'transfer', l: 'Transfer', i: 'swap', c: '--c2' }, { v: '__full', l: 'Lengkap', i: 'm_grid', c: '--c1' }];
 function renderNav() {
-  const fl = (S.loading || S.needsSetup) ? 0 : followList().length + dueList().length;
-  $('#nav').innerHTML = NAV.map(n => n.g ? '<div class="grp">' + n.g + '</div>' :
+  const fl = (S.loading || S.needsSetup) ? 0 : followList().length + dueList().length, items = S.mode === 'cepat' ? NAV_QUICK : NAV_FULL;
+  $('#nav').innerHTML = items.map(n => n.g ? '<div class="grp">' + n.g + '</div>' :
     '<button data-act="nav" data-v="' + n.v + '" style="--nc:var(' + n.c + ')" class="' + (S.view === n.v ? 'on' : '') + '"><span class="ib">' + ico(n.i, 17) + '</span><span>' + n.l + '</span>' + (n.v === 'tindak' && fl ? '<span class="badge">' + fl + '</span>' : '') + '</button>').join('');
-  $('#syncInfo').innerHTML = S.loading ? 'Memuat…' : (S.needsSetup ? 'Data tersimpan di browser ini.' : '<b>' + S.rows.length + '</b> lamaran tersimpan di browser ini.');
+  $('#syncInfo').innerHTML = (S.loading ? 'Memuat…' : (S.needsSetup ? 'Data lamaran tersimpan di browser ini.' : '<b>' + S.rows.length + '</b> lamaran tersimpan di browser ini.')) + '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="setmode" data-v="cepat">Mode cepat</button>' + (LT.lockEnabled && LT.lockEnabled() ? '<button class="btn sm" data-act="lockNow">' + ico('lock', 14) + ' Kunci</button>' : '') + '</div>';
 }
 
 /* ============ RENDER ============ */
 const TRACKER_VIEWS = ['beranda', 'lamaran', 'papan', 'analisis', 'tindak'];
 function render() {
   const y = window.scrollY;
+  S.mode = curMode(); document.body.classList.toggle('mode-cepat', S.mode === 'cepat');
   renderNav();
   const v = $('#view');
   if (S.loading) { v.innerHTML = '<div class="loading"><div><div class="spin"></div>Menyambungkan…</div></div>'; return; }
@@ -184,7 +198,7 @@ function render() {
 function head(title, sub, actions) { return '<div class="page-head"><div><h1>' + title + '</h1>' + (sub ? '<p>' + sub + '</p>' : '') + '</div><div class="actions">' + (actions || '') + '</div></div>'; }
 const addBtn = '<button class="btn primary" data-act="add">' + ico('plus') + 'Lamaran baru</button>';
 const refreshBtn = '<button class="btn" data-act="reload" title="Muat ulang">' + ico('refresh') + 'Muat ulang</button>';
-LT.h = { $, $$, esc, pad, fmtD, rp, money, pct, ico, api, toast, busy, head, cssv, addDays, diffDays, toIso, fromIso, slug, copyText, saveProgressSoon, render: () => render(), mkChart: (...a) => mkChart(...a), openModal: h => openModal(h), closeModal: () => closeModal(), displayName };
+LT.h = { $, $$, esc, pad, fmtD, rp, money, pct, ico, api, toast, busy, head, cssv, addDays, diffDays, toIso, fromIso, slug, copyText, saveProgressSoon, render: () => render(), mkChart: (...a) => mkChart(...a), openModal: h => openModal(h), closeModal: () => closeModal(), confirmBox: (m, f) => confirmBox(m, f), displayName, followList: () => followList(), dueList: () => dueList(), HARI, BLN };
 
 function mkChart(id, cfg) {
   const el = document.getElementById(id); if (!el) return;
@@ -525,17 +539,18 @@ function viewAtur() {
     '<div class="grid g2"><div class="panel"><h2>Target & tampilan</h2><p class="sub">Dipakai untuk hero Beranda dan penandaan "hangus".</p><form id="setForm"><div class="field"><label>Nama panggilan</label><input type="text" name="name" maxlength="40" value="' + esc(s.name) + '"></div>' +
     '<div class="fgrid"><div class="field"><label>Target jumlah perusahaan</label><input type="number" name="target" min="1" max="1000" value="' + esc(s.target) + '"></div><div class="field"><label>Tenggat target (opsional)</label><input type="date" name="deadline" value="' + esc(s.deadline) + '"></div>' +
     '<div class="field"><label>Mulai follow-up setelah (hari)</label><input type="number" name="followDays" min="3" max="60" value="' + esc(s.followDays) + '"></div><div class="field"><label>Dianggap hangus setelah (hari)</label><input type="number" name="ghostDays" min="7" max="90" value="' + esc(s.ghostDays) + '"></div></div>' +
-    '<div class="field"><label>Tema</label><select name="theme">' + [['auto', 'Ikuti perangkat'], ['light', 'Terang'], ['dark', 'Gelap']].map(o => '<option value="' + o[0] + '"' + (s.theme === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div><button class="btn primary" type="submit">Simpan pengaturan</button></form></div>' +
+    '<div class="field"><label>Mode tampilan</label><select name="mode">' + [['auto', 'Otomatis (HP = cepat, laptop = lengkap)'], ['cepat', 'Cepat (catat dan hari ini saja)'], ['lengkap', 'Lengkap (semua fitur)']].map(o => '<option value="' + o[0] + '"' + ((s.mode || 'auto') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div><div class="field"><label>Tema</label><select name="theme">' + [['auto', 'Ikuti perangkat'], ['light', 'Terang'], ['dark', 'Gelap']].map(o => '<option value="' + o[0] + '"' + (s.theme === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div><button class="btn primary" type="submit">Simpan pengaturan</button></form></div>' +
     '<div class="stack"><div class="panel"><h2>Data & cadangan</h2><p class="sub">Datamu (' + S.rows.length + ' lamaran) tersimpan hanya di browser ini. Menghapus data situs browser akan menghapusnya, jadi unduh cadangan secara berkala.</p>' +
     '<p class="small muted">Cadangan terakhir: ' + (s.lastBackup ? fmtD(s.lastBackup) : 'belum pernah') + '</p><div class="actions"><button class="btn primary" data-act="backup">' + ico('download', 16) + ' Unduh cadangan (.json)</button><button class="btn" data-act="pickfile">Impor / pulihkan file…</button><button class="btn" data-act="csv">Ekspor CSV</button></div>' + fileInput +
     '<p class="muted small" style="margin-top:10px">Impor menerima CSV dari Google Sheets (menambah ke data yang ada) dan cadangan .json (mengganti seluruh data). Untuk pindah perangkat: unduh cadangan di perangkat lama, lalu pulihkan di perangkat baru.</p></div>' +
     '<div class="panel"><h2>Pasang sebagai aplikasi</h2><p class="sub" style="margin:0">Chrome/Edge: klik ikon pasang di bilah alamat. Android: menu ⋮ → Tambahkan ke layar utama. iPhone: Bagikan → Tambah ke Layar Utama. Setelah dipasang, aplikasi bisa dibuka tanpa internet.</p></div>' +
-    '<div class="panel"><h2>Hapus semua data</h2><p class="sub">Menghapus lamaran, pengaturan, dan progres belajar dari browser ini.</p><button class="btn danger" data-act="wipe">Hapus semua data</button></div></div></div>';
+    (LT.settingsExtra || []).map(f => f()).join('') + '<div class="panel"><h2>Hapus semua data</h2><p class="sub">Menghapus lamaran, pengaturan, dan progres belajar dari browser ini.</p><button class="btn danger" data-act="wipe">Hapus semua data</button></div></div></div>';
 }
 
 /* ============ EVENT ============ */
 Object.assign(LT.act, {
-  nav(el) { S.view = el.dataset.v; render(); window.scrollTo(0, 0); },
+  nav(el) { if (el.dataset.v === '__full') { LT.act.setmode({ dataset: { v: 'lengkap' } }); return; } S.view = el.dataset.v; render(); window.scrollTo(0, 0); },
+  async setmode(el) { try { S.settings = await api('saveSettings', Object.assign({}, S.settings, { mode: el.dataset.v })); S.view = el.dataset.v === 'cepat' ? 'catat' : 'hari'; render(); window.scrollTo(0, 0); } catch (e) { toast(e.message, 'err'); } },
   reload() { load(); }, add() { openForm(); }, edit(el) { openForm(el.dataset.id); }, del(el) { closeModal(); askDelete(el.dataset.id); }, close() { closeModal(); }, csv() { exportCsv(); },
   bucket(el) { S.filters.bucket = el.dataset.v; render(); },
   atab(el) { S.aTab = el.dataset.v; render(); },
@@ -594,6 +609,7 @@ async function load() {
     S.user = d.user || {}; S.settings = Object.assign(S.settings, d.settings); S.progress = normProgress(d.progress); S.statuses = d.statuses; S.today = d.today || S.today;
     S.persistent = d.persistent; S.needsSetup = !!d.needsSetup; S.setupError = d.setupError || ''; S.rows = d.rows || []; S.meta = d.meta || {};
     applyTheme(); enrich(); S.loading = false;
+    if (!S._init) { S._init = true; S.view = curMode() === 'cepat' ? 'catat' : 'hari'; }
   } catch (e) { S.loading = false; S.error = e.message; }
   render();
 }
